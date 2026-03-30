@@ -327,7 +327,7 @@ function animate() {
   const linearProgress = Math.min(1, elapsed / state.totalTime);
   state.progress = easeProgress(linearProgress);
 
-  if (Math.random() < 0.15) {
+  if (Math.random() < 0.25) {
     spawnParticle();
   }
 
@@ -368,70 +368,139 @@ function spawnParticle() {
     vx: Math.cos(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
     vy: Math.sin(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
     life: 1,
-    decay: 0.03 + Math.random() * 0.04,
-    size: 0.5 + Math.random() * 1,
+    decay: 0.02 + Math.random() * 0.03,
+    size: 0.4 + Math.random() * 1.4,
   });
 
-  if (state.particles.length > 30) {
+  if (state.particles.length > 50) {
     state.particles = state.particles.filter((p) => p.life > 0.1);
   }
 }
 
 // === Background atmosphere ===
-// Floating dust motes in the background
-const dustMotes = [];
-for (let i = 0; i < 40; i++) {
-  dustMotes.push({
-    x: Math.random(),
-    y: Math.random(),
-    size: 0.5 + Math.random() * 1.5,
-    speed: 0.0001 + Math.random() * 0.0003,
-    drift: (Math.random() - 0.5) * 0.0002,
-    alpha: 0.03 + Math.random() * 0.06,
+
+// Layer 1: Slow floating dust (large, very faint, background depth)
+const dustFar = [];
+for (let i = 0; i < 20; i++) {
+  dustFar.push({
+    x: Math.random(), y: Math.random(),
+    size: 2 + Math.random() * 4,
+    speed: 0.00003 + Math.random() * 0.00008,
+    drift: (Math.random() - 0.5) * 0.00008,
+    alpha: 0.015 + Math.random() * 0.02,
     phase: Math.random() * Math.PI * 2,
   });
 }
 
+// Layer 2: Mid dust (medium, warm tones)
+const dustMid = [];
+for (let i = 0; i < 35; i++) {
+  dustMid.push({
+    x: Math.random(), y: Math.random(),
+    size: 0.8 + Math.random() * 1.8,
+    speed: 0.0001 + Math.random() * 0.00025,
+    drift: (Math.random() - 0.5) * 0.00015,
+    alpha: 0.03 + Math.random() * 0.05,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+// Layer 3: Close sparks (tiny, bright, fast)
+const dustNear = [];
+for (let i = 0; i < 15; i++) {
+  dustNear.push({
+    x: Math.random(), y: Math.random(),
+    size: 0.3 + Math.random() * 0.8,
+    speed: 0.0002 + Math.random() * 0.0005,
+    drift: (Math.random() - 0.5) * 0.0003,
+    alpha: 0.08 + Math.random() * 0.12,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+function updateDust(mote) {
+  const now = performance.now() * 0.001;
+  mote.y -= mote.speed;
+  mote.x += mote.drift + Math.sin(now * 0.7 + mote.phase) * 0.00008;
+  if (mote.y < -0.03) { mote.y = 1.03; mote.x = Math.random(); }
+  if (mote.x < -0.03) mote.x = 1.03;
+  if (mote.x > 1.03) mote.x = -0.03;
+}
+
 function drawBackground(w, h) {
-  // Base fill
+  const cx = w / 2;
+  const cy = h / 2;
+  const now = performance.now() * 0.001;
+
+  // Base
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, w, h);
 
-  // Subtle warm radial glow from center (like a distant torch)
-  const cx = w / 2;
-  const cy = h / 2;
-  const glowR = Math.max(w, h) * 0.6;
+  // Warm ambient glow from center (torch light)
+  const glowR = Math.max(w, h) * 0.65;
   const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-  glow.addColorStop(0, 'rgba(40, 25, 12, 0.25)');
-  glow.addColorStop(0.5, 'rgba(20, 12, 6, 0.1)');
+  glow.addColorStop(0, 'rgba(50, 30, 14, 0.3)');
+  glow.addColorStop(0.3, 'rgba(35, 20, 10, 0.15)');
+  glow.addColorStop(0.6, 'rgba(20, 12, 6, 0.06)');
   glow.addColorStop(1, 'transparent');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, w, h);
 
-  // Floating dust motes
-  const now = performance.now() * 0.001;
-  for (const d of dustMotes) {
-    d.y -= d.speed;
-    d.x += d.drift + Math.sin(now + d.phase) * 0.00005;
-    if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
-    if (d.x < -0.02) d.x = 1.02;
-    if (d.x > 1.02) d.x = -0.02;
+  // Secondary warm spot (slightly off-center, subtle)
+  const spot2x = cx + Math.sin(now * 0.15) * 30;
+  const spot2y = cy - 40 + Math.cos(now * 0.1) * 20;
+  const glow2 = ctx.createRadialGradient(spot2x, spot2y, 0, spot2x, spot2y, glowR * 0.4);
+  glow2.addColorStop(0, 'rgba(60, 35, 15, 0.08)');
+  glow2.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, w, h);
 
+  // Layer 1: Far dust (big, blurry, slow)
+  for (const d of dustFar) {
+    updateDust(d);
     const px = d.x * w;
     const py = d.y * h;
-    const flicker = 0.7 + Math.sin(now * 2 + d.phase) * 0.3;
+    const flicker = 0.6 + Math.sin(now * 0.5 + d.phase) * 0.4;
+
+    const g = ctx.createRadialGradient(px, py, 0, px, py, d.size);
+    g.addColorStop(0, `rgba(180, 130, 70, ${d.alpha * flicker})`);
+    g.addColorStop(1, 'transparent');
+    ctx.fillStyle = g;
+    ctx.fillRect(px - d.size, py - d.size, d.size * 2, d.size * 2);
+  }
+
+  // Layer 2: Mid dust
+  for (const d of dustMid) {
+    updateDust(d);
+    const px = d.x * w;
+    const py = d.y * h;
+    const flicker = 0.7 + Math.sin(now * 1.5 + d.phase) * 0.3;
 
     ctx.beginPath();
     ctx.arc(px, py, d.size, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(200, 150, 80, ${d.alpha * flicker})`;
+    ctx.fillStyle = `rgba(210, 155, 85, ${d.alpha * flicker})`;
     ctx.fill();
   }
 
-  // Vignette: darkened edges
-  const vig = ctx.createRadialGradient(cx, cy, glowR * 0.4, cx, cy, glowR);
+  // Layer 3: Near sparks (tiny, bright)
+  for (const d of dustNear) {
+    updateDust(d);
+    const px = d.x * w;
+    const py = d.y * h;
+    const flicker = 0.5 + Math.sin(now * 3 + d.phase) * 0.5;
+
+    ctx.beginPath();
+    ctx.arc(px, py, d.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(240, 190, 100, ${d.alpha * flicker})`;
+    ctx.fill();
+  }
+
+  // Vignette
+  const vig = ctx.createRadialGradient(cx, cy, glowR * 0.35, cx, cy, glowR);
   vig.addColorStop(0, 'transparent');
-  vig.addColorStop(0.7, 'rgba(0, 0, 0, 0.15)');
-  vig.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+  vig.addColorStop(0.6, 'rgba(0, 0, 0, 0.12)');
+  vig.addColorStop(0.85, 'rgba(0, 0, 0, 0.35)');
+  vig.addColorStop(1, 'rgba(0, 0, 0, 0.6)');
   ctx.fillStyle = vig;
   ctx.fillRect(0, 0, w, h);
 }
@@ -517,20 +586,31 @@ function drawProgressArc() {
 function drawParticles() {
   for (const p of state.particles) {
     p.x += p.vx;
-    p.y += p.vy - 0.15; // slight upward drift like embers rising
+    p.y += p.vy - 0.2; // upward drift like embers
     p.life -= p.decay;
     if (p.life <= 0) continue;
 
-    const a = p.life * 0.35;
-    // Warm ember color shift: bright yellow-orange when fresh, dim red as fading
-    const r = Math.round(255 - (1 - p.life) * 60);
-    const g = Math.round(180 * p.life + 40);
-    const b = Math.round(30 * p.life);
+    // Warm ember color: bright gold when new -> dim orange-red when fading
+    const r = Math.round(255 - (1 - p.life) * 50);
+    const g = Math.round(190 * p.life + 30);
+    const b = Math.round(40 * p.life);
+    const a = p.life * 0.4;
 
+    // Bright core
     ctx.beginPath();
     ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
     ctx.fill();
+
+    // Soft outer glow (only for larger particles)
+    if (p.size > 0.8 && p.life > 0.3) {
+      const glowSize = p.size * p.life * 3;
+      const gg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
+      gg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a * 0.3})`);
+      gg.addColorStop(1, 'transparent');
+      ctx.fillStyle = gg;
+      ctx.fillRect(p.x - glowSize, p.y - glowSize, glowSize * 2, glowSize * 2);
+    }
   }
 }
 
