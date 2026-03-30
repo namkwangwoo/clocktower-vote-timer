@@ -1,0 +1,246 @@
+/* === Reset & Base === */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --bg-card: #141414;
+  --text: #e8e8e8;
+  --text-dim: #666;
+  --accent: #c0392b;
+  --accent-light: #e74c3c;
+  --accent-glow: rgba(231, 76, 60, 0.3);
+  --gold: #d4a017;
+  --gold-dim: #8b6914;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* === Screen Management === */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* === Setup Screen === */
+#setup-screen {
+  background: var(--bg);
+}
+
+.setup-container {
+  width: 100%;
+  max-width: 400px;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+/* Logo */
+.logo {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.clock-icon {
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+
+.logo h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--accent-light);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-top: 4px;
+}
+
+/* Input Groups */
+.input-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.input-group label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-card);
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.input-wrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 1.8rem;
+  font-weight: 300;
+  text-align: center;
+  padding: 12px 0;
+  outline: none;
+  -moz-appearance: textfield;
+  min-width: 0;
+}
+
+.input-wrapper input::-webkit-outer-spin-button,
+.input-wrapper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+
+.btn-adjust {
+  width: 60px;
+  height: 60px;
+  background: transparent;
+  border: none;
+  color: var(--accent-light);
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.btn-adjust:active {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+/* Total Time */
+.total-time {
+  font-size: 1rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.total-time span {
+  color: var(--accent-light);
+  font-weight: 500;
+}
+
+/* Start Button */
+.btn-start {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, var(--accent), #8b1a1a);
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px var(--accent-glow);
+}
+
+.btn-start:active {
+  transform: scale(0.97);
+}
+
+.btn-text {
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: white;
+}
+
+/* === Timer Screen === */
+#timer-screen {
+  background: var(--bg);
+  cursor: pointer;
+}
+
+#timer-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Overlay */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10;
+  transition: opacity 0.3s;
+}
+
+.overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.overlay-text {
+  font-size: 2rem;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  color: var(--text);
+  text-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* === Safe Area === */
+@supports (padding: env(safe-area-inset-top)) {
+  .setup-container {
+    padding-top: calc(40px + env(safe-area-inset-top));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+}
+
+/* === Responsive === */
+@media (min-width: 768px) {
+  .setup-container {
+    max-width: 440px;
+  }
+
+  .logo h1 {
+    font-size: 1.6rem;
+  }
+
+  .input-wrapper input {
+    font-size: 2.2rem;
+  }
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0a">
+  <title>BotCT Timer</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- 설정 화면 -->
+  <div id="setup-screen" class="screen active">
+    <div class="setup-container">
+      <div class="logo">
+        <div class="clock-icon">
+          <svg viewBox="0 0 100 100" width="80" height="80">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#8b1a1a" stroke-width="3"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#4a0e0e" stroke-width="1"/>
+            <!-- 눈금 -->
+            <g stroke="#8b1a1a" stroke-width="2">
+              <line x1="50" y1="8" x2="50" y2="15"/>
+              <line x1="50" y1="85" x2="50" y2="92"/>
+              <line x1="8" y1="50" x2="15" y2="50"/>
+              <line x1="85" y1="50" x2="92" y2="50"/>
+            </g>
+            <!-- 바늘 -->
+            <line x1="50" y1="50" x2="50" y2="20" stroke="#c0392b" stroke-width="3" stroke-linecap="round"/>
+            <line x1="50" y1="50" x2="70" y2="50" stroke="#e74c3c" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="50" cy="50" r="4" fill="#c0392b"/>
+          </svg>
+        </div>
+        <h1>Blood on the Clocktower</h1>
+        <p class="subtitle">Vote Timer</p>
+      </div>
+
+      <div class="input-group">
+        <label for="player-count">Players</label>
+        <div class="input-wrapper">
+          <button class="btn-adjust" id="player-minus" aria-label="decrease">-</button>
+          <input type="number" id="player-count" value="7" min="2" max="20" step="1">
+          <button class="btn-adjust" id="player-plus" aria-label="increase">+</button>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="seconds-per-player">Sec / Player</label>
+        <div class="input-wrapper">
+          <button class="btn-adjust" id="sec-minus" aria-label="decrease">-</button>
+          <input type="number" id="seconds-per-player" value="3" min="0.5" max="30" step="0.5">
+          <button class="btn-adjust" id="sec-plus" aria-label="increase">+</button>
+        </div>
+      </div>
+
+      <div class="total-time">
+        Total: <span id="total-time">21.0</span>s
+      </div>
+
+      <button id="start-btn" class="btn-start">
+        <span class="btn-text">START</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 타이머 화면 -->
+  <div id="timer-screen" class="screen">
+    <canvas id="timer-canvas"></canvas>
+    <div id="timer-overlay" class="overlay hidden">
+      <div class="overlay-text" id="overlay-text">PAUSED</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
