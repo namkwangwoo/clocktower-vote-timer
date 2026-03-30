@@ -339,7 +339,7 @@ function animate() {
     state.progress = 1;
     state.phase = 'finished';
     drawFinished();
-    overlayText.textContent = 'DONE';
+    overlayText.textContent = '';
     setTimeout(() => {
       overlay.classList.remove('hidden');
     }, 500);
@@ -401,8 +401,8 @@ function spawnParticle() {
   state.particles.push({
     x: px + (Math.random() - 0.5) * 6,
     y: py + (Math.random() - 0.5) * 6,
-    vx: Math.cos(perpAngle) * drift + (Math.random() - 0.5) * 0.3,
-    vy: Math.sin(perpAngle) * drift + (Math.random() - 0.5) * 0.3,
+    vx: Math.cos(perpAngle) * drift * 0.3 + (Math.random() - 0.5) * 0.1,
+    vy: Math.sin(perpAngle) * drift * 0.3 + (Math.random() - 0.5) * 0.1,
     life: 1,
     decay, size, alpha, color,
   });
@@ -562,8 +562,8 @@ function draw() {
 
   drawClockFace(cx, cy, radius);
   drawProgressArc(cx, cy, radius, startAngle, currentAngle);
-  drawParticles();
-  drawHand(cx, cy, radius, currentAngle);
+  drawParticles();          // particles behind hand
+  drawHand(cx, cy, radius, currentAngle);  // hand on top
   drawCenterOrnament(cx, cy);
   drawTimeText(cx, cy, radius);
 }
@@ -625,15 +625,35 @@ function drawClockFace(cx, cy, radius) {
   ctx.lineCap = 'butt';
 }
 
-function drawProgressArc() {
-  // Removed - relying on particles and hand glow for progress feel
+function drawProgressArc(cx, cy, radius, startAngle, currentAngle) {
+  const arcSpan = currentAngle - startAngle;
+  if (arcSpan <= 0.01) return;
+
+  // Glowing arc stroke along the outer ring (not a filled wedge)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, startAngle, currentAngle, false);
+  ctx.strokeStyle = rgb(palette.highlight, 0.7);
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Softer wider glow behind it
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, startAngle, currentAngle, false);
+  ctx.strokeStyle = rgb(palette.accent, 0.25);
+  ctx.lineWidth = 14;
+  ctx.stroke();
+
+  ctx.lineCap = 'butt';
+  ctx.restore();
 }
 
 function drawParticles() {
   for (const p of state.particles) {
     p.x += p.vx;
-    p.y += p.vy - (0.15 + p.size * 0.08); // bigger = floats up faster
-    p.vx *= 0.998; // slight drag
+    p.y += p.vy - (0.05 + p.size * 0.02); // gentle upward drift
+    p.vx *= 0.99; // drag slows horizontal movement
     p.life -= p.decay;
     if (p.life <= 0) continue;
 
