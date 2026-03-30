@@ -315,7 +315,7 @@ function drawFinished() {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.fillText('Tap to return', cx, cy + radius + 30);
+  // no text
 }
 
 // === Main Animation ===
@@ -836,7 +836,7 @@ function drawTimeText(cx, cy, radius) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.fillText('Tap to return', cx, cy + radius + 30);
+  // no text
 }
 
 // === Init ===
