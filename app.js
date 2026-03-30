@@ -237,8 +237,7 @@ function animateCountdown() {
 function drawCountdown(elapsed) {
   const { w, h, cx, cy, radius } = getLayout();
 
-  ctx.fillStyle = palette.bg;
-  ctx.fillRect(0, 0, w, h);
+  drawBackground(w, h);
 
   const startAngle = -Math.PI / 2;
   drawClockFace(cx, cy, radius);
@@ -280,8 +279,7 @@ function drawCountdown(elapsed) {
 function drawStatic() {
   const { w, h, cx, cy, radius } = getLayout();
 
-  ctx.fillStyle = palette.bg;
-  ctx.fillRect(0, 0, w, h);
+  drawBackground(w, h);
 
   const startAngle = -Math.PI / 2;
   drawClockFace(cx, cy, radius);
@@ -302,8 +300,7 @@ function drawStatic() {
 function drawFinished() {
   const { w, h, cx, cy, radius } = getLayout();
 
-  ctx.fillStyle = palette.bg;
-  ctx.fillRect(0, 0, w, h);
+  drawBackground(w, h);
 
   const startAngle = -Math.PI / 2;
   const endAngle = startAngle + Math.PI * 2;
@@ -330,7 +327,7 @@ function animate() {
   const linearProgress = Math.min(1, elapsed / state.totalTime);
   state.progress = easeProgress(linearProgress);
 
-  if (Math.random() < 0.4) {
+  if (Math.random() < 0.15) {
     spawnParticle();
   }
 
@@ -371,21 +368,79 @@ function spawnParticle() {
     vx: Math.cos(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
     vy: Math.sin(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
     life: 1,
-    decay: 0.015 + Math.random() * 0.025,
-    size: 0.5 + Math.random() * 1.5,
+    decay: 0.03 + Math.random() * 0.04,
+    size: 0.5 + Math.random() * 1,
   });
 
-  if (state.particles.length > 120) {
+  if (state.particles.length > 30) {
     state.particles = state.particles.filter((p) => p.life > 0.1);
   }
+}
+
+// === Background atmosphere ===
+// Floating dust motes in the background
+const dustMotes = [];
+for (let i = 0; i < 40; i++) {
+  dustMotes.push({
+    x: Math.random(),
+    y: Math.random(),
+    size: 0.5 + Math.random() * 1.5,
+    speed: 0.0001 + Math.random() * 0.0003,
+    drift: (Math.random() - 0.5) * 0.0002,
+    alpha: 0.03 + Math.random() * 0.06,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+function drawBackground(w, h) {
+  // Base fill
+  ctx.fillStyle = palette.bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // Subtle warm radial glow from center (like a distant torch)
+  const cx = w / 2;
+  const cy = h / 2;
+  const glowR = Math.max(w, h) * 0.6;
+  const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+  glow.addColorStop(0, 'rgba(40, 25, 12, 0.25)');
+  glow.addColorStop(0.5, 'rgba(20, 12, 6, 0.1)');
+  glow.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, w, h);
+
+  // Floating dust motes
+  const now = performance.now() * 0.001;
+  for (const d of dustMotes) {
+    d.y -= d.speed;
+    d.x += d.drift + Math.sin(now + d.phase) * 0.00005;
+    if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
+    if (d.x < -0.02) d.x = 1.02;
+    if (d.x > 1.02) d.x = -0.02;
+
+    const px = d.x * w;
+    const py = d.y * h;
+    const flicker = 0.7 + Math.sin(now * 2 + d.phase) * 0.3;
+
+    ctx.beginPath();
+    ctx.arc(px, py, d.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200, 150, 80, ${d.alpha * flicker})`;
+    ctx.fill();
+  }
+
+  // Vignette: darkened edges
+  const vig = ctx.createRadialGradient(cx, cy, glowR * 0.4, cx, cy, glowR);
+  vig.addColorStop(0, 'transparent');
+  vig.addColorStop(0.7, 'rgba(0, 0, 0, 0.15)');
+  vig.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, w, h);
 }
 
 // === Drawing ===
 function draw() {
   const { w, h, cx, cy, radius } = getLayout();
 
-  ctx.fillStyle = palette.bg;
-  ctx.fillRect(0, 0, w, h);
+  drawBackground(w, h);
 
   const startAngle = -Math.PI / 2;
   const currentAngle = startAngle + state.progress * Math.PI * 2;
@@ -455,44 +510,8 @@ function drawClockFace(cx, cy, radius) {
   ctx.lineCap = 'butt';
 }
 
-function drawProgressArc(cx, cy, radius, startAngle, currentAngle) {
-  const arcSpan = currentAngle - startAngle;
-  if (arcSpan <= 0) return;
-  const arcProgress = Math.min(1, arcSpan / (Math.PI * 2));
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, radius - 3, startAngle, currentAngle, false);
-  ctx.closePath();
-
-  const grad = ctx.createConicGradient(startAngle, cx, cy);
-  const a = palette.accent;
-  grad.addColorStop(0, rgb(a, 0.28));
-  grad.addColorStop(arcProgress * 0.5, rgb(a, 0.2));
-  grad.addColorStop(Math.min(arcProgress, 0.999), rgb(a, 0.12));
-  grad.addColorStop(Math.min(arcProgress + 0.001, 1), 'transparent');
-  if (arcProgress + 0.001 < 1) grad.addColorStop(1, 'transparent');
-
-  ctx.fillStyle = grad;
-  ctx.fill();
-  ctx.restore();
-
-  // Leading glow
-  const glowX = cx + Math.cos(currentAngle) * radius * 0.6;
-  const glowY = cy + Math.sin(currentAngle) * radius * 0.6;
-  const glowGrad = ctx.createRadialGradient(glowX, glowY, 0, glowX, glowY, radius * 0.4);
-  glowGrad.addColorStop(0, rgb(palette.accentGlow, 0.1));
-  glowGrad.addColorStop(1, 'transparent');
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, radius, currentAngle - 0.3, currentAngle + 0.05, false);
-  ctx.closePath();
-  ctx.fillStyle = glowGrad;
-  ctx.fill();
-  ctx.restore();
+function drawProgressArc() {
+  // Removed - relying on particles and hand glow for progress feel
 }
 
 function drawParticles() {
@@ -524,8 +543,7 @@ function drawHand(cx, cy, radius, angle) {
   ctx.translate(cx, cy);
   ctx.rotate(angle + Math.PI / 2);
 
-  ctx.shadowColor = rgb(palette.accentGlow, 0.5);
-  ctx.shadowBlur = 20;
+  // No shadow - causes visible fill artifact on large hands
 
   const halfBase = 4;
   const halfMid = 2.8;
