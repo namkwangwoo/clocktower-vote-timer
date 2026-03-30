@@ -327,7 +327,9 @@ function animate() {
   const linearProgress = Math.min(1, elapsed / state.totalTime);
   state.progress = easeProgress(linearProgress);
 
-  if (Math.random() < 0.25) {
+  // Spawn multiple particles per frame for density
+  const spawnCount = 1 + Math.floor(Math.random() * 3); // 1-3 per frame
+  for (let i = 0; i < spawnCount; i++) {
     spawnParticle();
   }
 
@@ -352,28 +354,61 @@ function spawnParticle() {
   const { cx, cy, radius } = getLayout();
   const angle = -Math.PI / 2 + state.progress * Math.PI * 2;
 
-  const handFraction = 0.3 + Math.random() * 0.65;
+  // Spawn along 20%-100% of hand
+  const handFraction = 0.2 + Math.random() * 0.8;
   const dist = radius * 0.95 * handFraction;
-  const spreadAngle = angle + (Math.random() - 0.5) * 0.04;
+  const spreadAngle = angle + (Math.random() - 0.5) * 0.06;
 
   const px = cx + Math.cos(spreadAngle) * dist;
   const py = cy + Math.sin(spreadAngle) * dist;
 
   const perpAngle = angle + Math.PI / 2;
-  const drift = (Math.random() - 0.5) * 0.6;
+  const drift = (Math.random() - 0.5) * 0.8;
+
+  // Varied types: tiny sparks, medium embers, rare large cinders
+  const roll = Math.random();
+  let size, decay, alpha;
+  if (roll < 0.5) {
+    // Tiny sparks (most common)
+    size = 0.3 + Math.random() * 0.7;
+    decay = 0.025 + Math.random() * 0.04;
+    alpha = 0.5;
+  } else if (roll < 0.85) {
+    // Medium embers
+    size = 0.8 + Math.random() * 1.5;
+    decay = 0.012 + Math.random() * 0.02;
+    alpha = 0.45;
+  } else {
+    // Large cinders (rare, slow, long-lived)
+    size = 1.8 + Math.random() * 2.5;
+    decay = 0.006 + Math.random() * 0.01;
+    alpha = 0.3;
+  }
+
+  // Color variety: gold, orange, warm white
+  const colorRoll = Math.random();
+  let color;
+  if (colorRoll < 0.4) {
+    color = [255, 200, 80];   // bright gold
+  } else if (colorRoll < 0.7) {
+    color = [255, 150, 50];   // orange
+  } else if (colorRoll < 0.9) {
+    color = [255, 120, 40];   // deep orange
+  } else {
+    color = [255, 230, 180];  // warm white (hot spark)
+  }
 
   state.particles.push({
-    x: px + (Math.random() - 0.5) * 4,
-    y: py + (Math.random() - 0.5) * 4,
-    vx: Math.cos(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
-    vy: Math.sin(perpAngle) * drift + (Math.random() - 0.5) * 0.2,
+    x: px + (Math.random() - 0.5) * 6,
+    y: py + (Math.random() - 0.5) * 6,
+    vx: Math.cos(perpAngle) * drift + (Math.random() - 0.5) * 0.3,
+    vy: Math.sin(perpAngle) * drift + (Math.random() - 0.5) * 0.3,
     life: 1,
-    decay: 0.02 + Math.random() * 0.03,
-    size: 0.4 + Math.random() * 1.4,
+    decay, size, alpha, color,
   });
 
-  if (state.particles.length > 50) {
-    state.particles = state.particles.filter((p) => p.life > 0.1);
+  if (state.particles.length > 150) {
+    state.particles = state.particles.filter((p) => p.life > 0.05);
   }
 }
 
@@ -436,23 +471,34 @@ function drawBackground(w, h) {
   ctx.fillStyle = palette.bg;
   ctx.fillRect(0, 0, w, h);
 
-  // Warm ambient glow from center (torch light)
-  const glowR = Math.max(w, h) * 0.65;
+  // Main warm glow from center (torch/hearth)
+  const glowR = Math.max(w, h) * 0.7;
   const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-  glow.addColorStop(0, 'rgba(50, 30, 14, 0.3)');
-  glow.addColorStop(0.3, 'rgba(35, 20, 10, 0.15)');
-  glow.addColorStop(0.6, 'rgba(20, 12, 6, 0.06)');
+  glow.addColorStop(0, 'rgba(65, 40, 15, 0.4)');
+  glow.addColorStop(0.2, 'rgba(50, 30, 12, 0.25)');
+  glow.addColorStop(0.45, 'rgba(35, 20, 8, 0.12)');
+  glow.addColorStop(0.7, 'rgba(15, 8, 4, 0.05)');
   glow.addColorStop(1, 'transparent');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, w, h);
 
-  // Secondary warm spot (slightly off-center, subtle)
-  const spot2x = cx + Math.sin(now * 0.15) * 30;
-  const spot2y = cy - 40 + Math.cos(now * 0.1) * 20;
-  const glow2 = ctx.createRadialGradient(spot2x, spot2y, 0, spot2x, spot2y, glowR * 0.4);
-  glow2.addColorStop(0, 'rgba(60, 35, 15, 0.08)');
+  // Breathing secondary glow (slowly wanders)
+  const spot2x = cx + Math.sin(now * 0.12) * 50;
+  const spot2y = cy - 30 + Math.cos(now * 0.08) * 40;
+  const breathe = 0.08 + Math.sin(now * 0.3) * 0.03;
+  const glow2 = ctx.createRadialGradient(spot2x, spot2y, 0, spot2x, spot2y, glowR * 0.5);
+  glow2.addColorStop(0, `rgba(70, 40, 15, ${breathe})`);
   glow2.addColorStop(1, 'transparent');
   ctx.fillStyle = glow2;
+  ctx.fillRect(0, 0, w, h);
+
+  // Third glow (lower, like reflected firelight)
+  const spot3x = cx + Math.cos(now * 0.1) * 40;
+  const spot3y = cy + glowR * 0.3 + Math.sin(now * 0.15) * 20;
+  const glow3 = ctx.createRadialGradient(spot3x, spot3y, 0, spot3x, spot3y, glowR * 0.35);
+  glow3.addColorStop(0, 'rgba(50, 25, 10, 0.06)');
+  glow3.addColorStop(1, 'transparent');
+  ctx.fillStyle = glow3;
   ctx.fillRect(0, 0, w, h);
 
   // Layer 1: Far dust (big, blurry, slow)
@@ -586,27 +632,32 @@ function drawProgressArc() {
 function drawParticles() {
   for (const p of state.particles) {
     p.x += p.vx;
-    p.y += p.vy - 0.2; // upward drift like embers
+    p.y += p.vy - (0.15 + p.size * 0.08); // bigger = floats up faster
+    p.vx *= 0.998; // slight drag
     p.life -= p.decay;
     if (p.life <= 0) continue;
 
-    // Warm ember color: bright gold when new -> dim orange-red when fading
-    const r = Math.round(255 - (1 - p.life) * 50);
-    const g = Math.round(190 * p.life + 30);
-    const b = Math.round(40 * p.life);
-    const a = p.life * 0.4;
+    const c = p.color;
+    // Fade: color dims as life decreases
+    const fade = p.life;
+    const r = Math.round(c[0] * (0.4 + fade * 0.6));
+    const g = Math.round(c[1] * fade * 0.8);
+    const b = Math.round(c[2] * fade * 0.5);
+    const a = p.alpha * fade;
 
-    // Bright core
+    const sz = p.size * (0.3 + fade * 0.7);
+
+    // Core
     ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
     ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${a})`;
     ctx.fill();
 
-    // Soft outer glow (only for larger particles)
-    if (p.size > 0.8 && p.life > 0.3) {
-      const glowSize = p.size * p.life * 3;
+    // Glow halo for medium+ particles
+    if (p.size > 0.7 && fade > 0.2) {
+      const glowSize = sz * 3;
       const gg = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowSize);
-      gg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a * 0.3})`);
+      gg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${a * 0.25})`);
       gg.addColorStop(1, 'transparent');
       ctx.fillStyle = gg;
       ctx.fillRect(p.x - glowSize, p.y - glowSize, glowSize * 2, glowSize * 2);
@@ -711,16 +762,7 @@ function drawHand(cx, cy, radius, angle) {
   ctx.lineWidth = 0.5;
   ctx.stroke();
 
-  // Tip
-  ctx.beginPath();
-  ctx.moveTo(0, -len - 6);
-  ctx.quadraticCurveTo(-3, -len + 2, -1.5, -len + 1);
-  ctx.lineTo(0, -len);
-  ctx.lineTo(1.5, -len + 1);
-  ctx.quadraticCurveTo(3, -len + 2, 0, -len - 6);
-  ctx.closePath();
-  ctx.fillStyle = palette.handTip;
-  ctx.fill();
+  // Tip - no separate arrow, the body bezier already tapers to a point at -len
 
   // Tail
   ctx.beginPath();
